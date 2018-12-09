@@ -7,6 +7,7 @@
 //============================================================================
 
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
 
@@ -34,6 +35,9 @@ int main(int argc, char *argv[]) {
     std::string password = argv[2];
     std::string credentials = username + ":" + password;
 
+    map<string, map<string, string>> readings_map;
+    string id, key, value = "";
+
     pugi::xml_document url_doc;
 
     curlpp::Cleanup cleaner;
@@ -59,21 +63,32 @@ int main(int argc, char *argv[]) {
 
 	string child_name = "";
 	for (pugi::xml_node siteMeasurement = payloadPublication.child("siteMeasurements"); siteMeasurement; siteMeasurement = siteMeasurement.next_sibling("siteMeasurements")) {
-		cout << siteMeasurement.child("measurementSiteReference").attribute("id").name() << ": ";
-		cout << siteMeasurement.child("measurementSiteReference").attribute("id").value() << endl;
-		cout << siteMeasurement.child("measurementSiteReference").attribute("version").name() << ": " ;
-		cout << siteMeasurement.child("measurementSiteReference").attribute("version").value() << endl;
-		cout << siteMeasurement.child("measurementTimeDefault").name() << ": ";
-		cout << siteMeasurement.child("measurementTimeDefault").child_value() << endl;
+		id = siteMeasurement.child("measurementSiteReference").attribute("id").value();
+		cout << siteMeasurement.child("measurementSiteReference").attribute("id").name() << ": " << id << endl;
+
+		key = siteMeasurement.child("measurementSiteReference").attribute("version").name();
+		value = siteMeasurement.child("measurementSiteReference").attribute("version").value();
+		cout << key << ": " << value << endl;
+		readings_map[id][key] = value;
+
+		key = siteMeasurement.child("measurementTimeDefault").name();
+		value =siteMeasurement.child("measurementTimeDefault").child_value();
+		cout << key << ": " << value << endl;
+		readings_map[id][key] = value;
+
 		for (pugi::xml_node measuredValue: siteMeasurement.children("measuredValue")) {
 			child_name = measuredValue.child("measuredValue").first_child().first_child().first_child().name();
 			// A level deeper
 			if (child_name == "roadSurfaceConditionMeasurementsExtension") {
-				cout << measuredValue.child("measuredValue").first_child().first_child().first_child().first_child().first_child().name() << ": ";
-				cout << measuredValue.child("measuredValue").first_child().first_child().first_child().first_child().first_child().first_child().child_value() << endl;
+				key = measuredValue.child("measuredValue").first_child().first_child().first_child().first_child().first_child().name();
+				value = measuredValue.child("measuredValue").first_child().first_child().first_child().first_child().first_child().first_child().child_value();
+				cout << key << ": " << value << endl;
+				readings_map[id][key] = value;
 			} else {
-				cout << measuredValue.child("measuredValue").first_child().first_child().first_child().name() << ": ";
-				cout << measuredValue.child("measuredValue").first_child().first_child().first_child().first_child().child_value() << endl;
+				key = measuredValue.child("measuredValue").first_child().first_child().first_child().name();
+				value = measuredValue.child("measuredValue").first_child().first_child().first_child().first_child().child_value();
+				cout << key << ": " << value << endl;
+				readings_map[id][key] = value;
 			}
 		}
 		cout << "---" << endl;
@@ -100,21 +115,37 @@ int main(int argc, char *argv[]) {
 			child("payloadPublication").
 			child("measurementSiteTable");
 
-	cout << measurementSiteTable.attribute("version").name() << ":: ";
-	cout << measurementSiteTable.attribute("version").value() << endl;
-
 	for (pugi::xml_node measurementSiteRecord: measurementSiteTable.children("measurementSiteRecord")) {
-		cout << measurementSiteRecord.attribute("id").name() << ": ";
-		cout << measurementSiteRecord.attribute("id").value() << endl;
-		cout << measurementSiteRecord.attribute("version").name() << ": " ;
-		cout << measurementSiteRecord.attribute("version").value() << endl;
-		cout << measurementSiteRecord.child("measurementSiteName").name() << ": ";
-		cout << measurementSiteRecord.child("measurementSiteName").child("values").child("value").child_value() << endl;
-		cout << measurementSiteRecord.child("measurementSiteLocation").child("pointByCoordinates").child("pointCoordinates").child("latitude").name() << ": ";
-		cout << measurementSiteRecord.child("measurementSiteLocation").child("pointByCoordinates").child("pointCoordinates").child("latitude").child_value() << endl;
-		cout << measurementSiteRecord.child("measurementSiteLocation").child("pointByCoordinates").child("pointCoordinates").child("longitude").name() << ": ";
-		cout << measurementSiteRecord.child("measurementSiteLocation").child("pointByCoordinates").child("pointCoordinates").child("longitude").child_value() << endl;
+		id = measurementSiteRecord.attribute("id").value();
+		cout << measurementSiteRecord.attribute("id").name() << ": " << id << endl;
+
+		key = measurementSiteRecord.attribute("version").name();
+		value = measurementSiteRecord.attribute("version").value();
+		cout << key << ": " << value << endl;
+		readings_map[id][key] = value;
+
+		key = measurementSiteRecord.child("measurementSiteName").name();
+		value = measurementSiteRecord.child("measurementSiteName").child("values").child("value").child_value();
+		cout << key << ": " << value << endl;
+		readings_map[id][key] = value;
+
+		key = measurementSiteRecord.child("measurementSiteLocation").child("pointByCoordinates").child("pointCoordinates").child("latitude").name();
+		value = measurementSiteRecord.child("measurementSiteLocation").child("pointByCoordinates").child("pointCoordinates").child("latitude").child_value();
+		cout << key << ": " << value << endl;
+		readings_map[id][key] = value;
+
+		key = measurementSiteRecord.child("measurementSiteLocation").child("pointByCoordinates").child("pointCoordinates").child("longitude").name();
+		value = measurementSiteRecord.child("measurementSiteLocation").child("pointByCoordinates").child("pointCoordinates").child("longitude").child_value();
+		cout << key << ": " << value << endl;
+		readings_map[id][key] = value;
+
 		cout << "----" << endl;
+	}
+
+	for (auto outer : readings_map) {
+		for (auto inner : outer.second) {
+			cout << outer.first << ": " << inner.first << ": " << inner.second << endl;
+		}
 	}
 
 	return 0;
