@@ -158,13 +158,24 @@ int main(int argc, char *argv[]) {
 		for (auto inner : outer.second) {
 //			cout << outer.first << ": " << inner.first << ": " << inner.second << endl;
 			j[inner.first] = inner.second;
+			// Convert date to unixtime
 			if (inner.first == "measurementTimeDefault") {
 				istringstream ss(inner.second);
 				ss >> std::get_time(&t, "%Y-%m-%dT%H:%M:%SZ");
 				seconds = std::mktime(&t);
 			}
+
+			// Move latitude and longitude to location object
+			if (inner.first == "latitude") {
+				j["location"]["lat"] = inner.second;
+			}
+			if (inner.first == "longitude") {
+				j["location"]["lon"] = inner.second;
+			}
 		}
-		post_url = "http://localhost:9200/vegvesen_" + id + "/_doc/" + to_string(seconds); // TESTING
+		j.erase("latitude");
+		j.erase("longitude");
+		post_url = "http://localhost:9200/vegvesen_" + id + "/_doc/" + to_string(seconds);
 		request.setOpt(new curlpp::options::Url(post_url));
 		request.setOpt(new curlpp::options::PostFields(j.dump()));
 		request.setOpt(new curlpp::options::PostFieldSize(j.dump().length()));
